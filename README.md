@@ -1,2 +1,2 @@
 # eo-stac-harvester
-Harvest EO STAC datacube and translate STAC to CoreCore 
+Harvest EO STAC datacube and translate STAC to GeoCore 
