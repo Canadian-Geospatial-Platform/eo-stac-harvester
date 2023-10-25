@@ -1,0 +1,22 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  python3.9
+
+  Sample SAM Template for eodms-sentinel1-stac-to-geocore-dev
+
+Resources:
+  EODMSSentinel1STACtoGeoCoreFunction:
+    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Properties:
+      CodeUri: lambda-function-eodms-sentinel1/
+      Handler: app.lambda_handler
+      Runtime: python3.9
+      MemorySize: 1024
+      Timeout: 900
+      Architectures:
+      - x86_64
+      Role: >-
+        arn:aws:iam::006288227511:role/hnap-json-harvester-LambdaExecutionRole-YGC4NRBOO685
+        
+        
