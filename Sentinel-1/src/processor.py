@@ -105,7 +105,8 @@ def lambda_handler(event, context):
                         'contact': contact,
                         'type_data': type_data,
                         'topicCategory': topicCategory,
-                        'sourceSystemName':sourceSystemName
+                        'sourceSystemName':sourceSystemName,
+                        'eoCollection':collection
                         }
                         
                 item_count = 0 

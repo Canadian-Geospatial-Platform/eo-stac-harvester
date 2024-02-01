@@ -247,6 +247,8 @@ def coll_to_features_properties(params, coll_dict,geocore_features_dict):
     type_data = params['type_data']
     topicCategory = params['topicCategory']
     sourceSystemName = params['sourceSystemName']
+    eoCollection = params['eoCollection']
+    
     
     properties_dict = geocore_features_dict['properties']
     
@@ -300,6 +302,7 @@ def coll_to_features_properties(params, coll_dict,geocore_features_dict):
         'keywords': {'en': keywords_en_str, 'fr': keywords_fr_str},
         "geometry": geometry_str, 
         'sourceSystemName': sourceSystemName, 
+        'eoCollection':eoCollection,
           
     })
      
@@ -385,6 +388,7 @@ def item_to_features_properties(params, geocore_features_dict, item_dict, coll_i
     type_data = params['type_data']
     topicCategory = params['topicCategory']
     sourceSystemName = params['sourceSystemName']
+    eoCollection = params['eoCollection']
     
     properties_dict = geocore_features_dict['properties']
     # Get item level lelments 
@@ -453,6 +457,17 @@ def item_to_features_properties(params, geocore_features_dict, item_dict, coll_i
     west, south, east, north = [round(coord, 2) for coord in item_bbox]
     geometry_str = f"POLYGON(({west} {south}, {east} {south}, {east} {north}, {west} {north}, {west} {south}))"
     
+    #EO filters / SAR properties 
+    orbit_state = item_properties.get('sar:orbit_state', 'None')
+    polarizations = item_properties.get('sar:polarizations', 'None') #list
+    polarizations_str = polarization_to_string(polarizations)
+    eoFilters = [ 
+        {
+			"polarizations":polarizations_str,
+			"orbitState": orbit_state
+		}
+    ]
+    
     # Other properties 
     update_dict(properties_dict, {
         "topicCategory": topicCategory, 
@@ -467,7 +482,8 @@ def item_to_features_properties(params, geocore_features_dict, item_dict, coll_i
         'keywords': {'en': keywords_en_str, 'fr': keywords_fr_str},
         "geometry": geometry_str, 
         'sourceSystemName': sourceSystemName, 
-          
+        'eoCollection':eoCollection,
+        'eoFilters':eoFilters,   
     })
      
     #skipped: date: None for STAC collection 
@@ -492,3 +508,18 @@ def get_item_fields(item_dict):
     coll_id = item_dict.get('collection')
     return item_id, item_bbox, item_links, item_assets, item_properties, coll_id; 
 
+def polarization_to_string(polarization):
+    # Check if the polarization is None
+    if polarization is None:
+        return 'None'
+
+    # Check if the length of the polarization list is 2
+    if len(polarization) == 2:
+        # Join the two polarizations with a '+'
+        return ' + '.join(polarization)
+    elif len(polarization) == 1:
+        # Return the single polarization as a string
+        return polarization[0]
+    else:
+        # Handle other cases, such as an empty list or more than 2 items
+        return 'Invalid polarization list'
