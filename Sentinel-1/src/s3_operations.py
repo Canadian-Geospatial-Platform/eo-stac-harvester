@@ -27,6 +27,23 @@ def delete_filelist_s3(deleted_filelist, bucket):
         
     return error_msg
 
+# Requires open_s3_file(bucket, filename),  s3_list_filenames(bucket), delete_files_s3(filename_list, bucket)
+def delete_stac_s3(bucket_geojson, bucket_template, filename):
+    error_msg = None 
+    filenames_list = list_filenames_s3(bucket_template)    
+    if filename in filenames_list: 
+        lastRun = open_file_s3(bucket_template, filename)
+        #ccmeo_napl-ottawa_napl-ottawa-2001.geojson, or lastRun.replace('\r\n', ' ').split(' ')
+        lastRun_list = lastRun.splitlines()
+        e = delete_filelist_s3(deleted_filelist=lastRun_list, bucket=bucket_geojson)
+        if e != None: 
+            error_msg += e
+    else: 
+        print(f"No existing {filename} in the bucket {bucket_template}")
+    return error_msg
+    
+
+# Open files from s3 bucket
 def open_file_s3(bucket, filename):
     """Open a S3 file from bucket and filename and return the body as a string
     :param bucket: Bucket name
@@ -52,7 +69,25 @@ def open_file_s3(bucket, filename):
     except ClientError as e:
         logging.error(e)
         return False 
- 
+    
+    
+def list_filenames_s3(bucket):
+    """ List a S3 bucket to obtain file names 
+    Note: if there are too many records (>999) to pricessm we may need to paginate 
+    :parm bucket: name of the bucket 
+    :return a list of filenames within the bucket 
+    """
+    s3 = boto3.resource("s3")
+    my_bucket = s3.Bucket(bucket)
+    filename_list = []
+    count = 0 
+    for my_bucket_object in my_bucket.objects.all():
+        #print(my_bucket_object.key)
+        filename_list.append(my_bucket_object.key)
+        count += 1 
+    print(f"{count} files are included in the bucket {bucket}")
+    return filename_list
+
 
 # Upload a a text or json file to S3 
 def upload_file_s3(filename, bucket, json_data, object_name=None):
