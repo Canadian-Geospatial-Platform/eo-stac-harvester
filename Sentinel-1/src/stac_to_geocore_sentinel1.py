@@ -12,7 +12,12 @@ spatialRepresentation = 'grid; grille'
 type_data = "Synthetic Aperature Radar; Radar à synthèse d'ouverture"
 topicCategory = 'EarthObservation;SyntheticAperatureRadar'
 disclaimer_en = '\\n\\n**This third party metadata element follows the Spatio Temporal Asset Catalog (STAC) specification.**'
-disclaimer_fr = '\\n\\n**Cet élément de métadonnées tiers suit la spécification Spatio Temporal Asset Catalog (STAC).** **Cet élément de métadonnées provenant d’une tierce partie a été traduit à l\'aide d\'un outil de traduction automatisée (Amazon Translate).**'
+#disclaimer_fr = '\\n\\n**Cet élément de métadonnées tiers suit la spécification Spatio Temporal Asset Catalog (STAC).** **Cet élément de métadonnées provenant d’une tierce partie a été traduit à l\'aide d\'un outil de traduction automatisée (Amazon Translate).**'
+disclaimer_fr = '\\n\\n**Cet élément de métadonnées tiers suit la spécification Spatio Temporal Asset Catalog (STAC).**'
+coll_description_en = "The Sentinel mirror is maintained by the Government of Canada through the Copernicus collaborative ground segment program as well as EUMETSAT. Data is made available as quickly as possible based on Canada coverage availability at the source."
+coll_description_fr = "Le miroir Sentinel est entretenu par le gouvernement du Canada dans le cadre du programme collaboratif du segment sol Copernicus ainsi que par EUMETSAT. Les données sont rendues disponibles le plus rapidement possible en fonction de la disponibilité de la couverture canadienne à la source."
+coll_keywords_fr = "sentinel, radar, observation de la Terre, esa" 
+
 contact = [{
         'organisation':{
             'en':'Government of Canada;Natural Resources Canada;Strategic Policy and Innovation Sector',
@@ -248,11 +253,10 @@ def coll_to_features_properties(params, coll_dict,geocore_features_dict):
     topicCategory = params['topicCategory']
     sourceSystemName = params['sourceSystemName']
     eoCollection = params['eoCollection']
-    
-    
+
     properties_dict = geocore_features_dict['properties']
     
-    coll_id, coll_bbox, time_begin, time_end, coll_links, coll_assets, title_en, title_fr, description_en, description_fr, keywords_en, keywords_fr = get_collection_fields(coll_dict)     
+    coll_id, coll_bbox, time_begin, time_end, coll_links, coll_assets, title_en, title_fr, description_en, description_fr, keywords_en, keywords_fr = get_collection_fields(coll_dict, coll_description_en,coll_description_fr,coll_keywords_fr)     
     #id
     update_dict(properties_dict, {"id": source + '-' + coll_id})
     #title 
@@ -281,10 +285,10 @@ def coll_to_features_properties(params, coll_dict,geocore_features_dict):
     keywords_fr_str = f"SpatioTemporal Asset Catalog, stac, {keywords_fr or ''}"
     
     #Geometry 
-    print("Value of coll_bbox:", coll_bbox)
-    print("Type of coll_bbox:", type(coll_bbox))
-    for val in coll_bbox:
-        print(val, type(val))
+    #print("Value of coll_bbox:", coll_bbox)
+    #print("Type of coll_bbox:", type(coll_bbox))
+    #for val in coll_bbox:
+    #    print(val, type(val))
     west, south, east, north = [round(coord, 2) for coord in coll_bbox]
     geometry_str = f"POLYGON(({west} {south}, {east} {south}, {east} {north}, {west} {north}, {west} {south}))"
     
@@ -315,8 +319,8 @@ def coll_to_features_properties(params, coll_dict,geocore_features_dict):
     # options 
     return (properties_dict)
 
-
-def get_collection_fields(coll_dict): 
+#TODO Update these get_collection_fields functions for fr keywords, description, and coll_title
+def get_collection_fields(coll_dict,coll_description_en,coll_description_fr,coll_keywords_fr): 
     """Get the collection fields needed for the geocore mapping 
     :param coll_dict: dictionary of a singel STAC collection 
     """
@@ -324,7 +328,7 @@ def get_collection_fields(coll_dict):
     #.get() method allows you to provide a default value (in this case, None) if the key is not found.
     coll_id = coll_dict.get('id')
     coll_title = coll_dict.get('title')
-    coll_description = coll_dict.get('description')
+    #coll_description = coll_dict.get('description')
     coll_keywords = coll_dict.get('keywords')
     coll_extent = coll_dict.get('extent')
     coll_links = coll_dict.get('links')
@@ -348,15 +352,14 @@ def get_collection_fields(coll_dict):
     else:
         keywords_en, keywords_fr = None, None
     """    
-    #Note, EODMS STAC API endpoint is not bilingual content at the moment, we will use the English content as the French content 
-    #for keywords, description, and keywords
+    #Note, EODMS STAC API endpoint is not bilingual content at the moment, we will use staic Fr translations for these properties 
     title_en, title_fr = coll_title, coll_title
-    description_en, description_fr = coll_description, coll_description
-    keywords_en, keywords_fr = ', '.join(coll_keywords), ', '.join(coll_keywords)
-    
+    description_en, description_fr = coll_description_en, coll_description_fr
+    keywords_en, keywords_fr = ', '.join(coll_keywords), coll_keywords_fr
+
     return coll_id, coll_bbox, time_begin, time_end, coll_links, coll_assets, title_en, title_fr, description_en, description_fr, keywords_en, keywords_fr
 
-def create_coll_dict(api_root, collection):
+def create_coll_dict(api_root, collection, coll_title_fr,coll_description_fr,coll_keywords_fr):
     response_collection = requests.get(f'{api_root}/collections/')
     collection_data_list = response_collection.json().get('collections', [])
     #subset to one collection based on id
@@ -369,7 +372,7 @@ def create_coll_dict(api_root, collection):
             'keywords': {'en': fields[10], 'fr': fields[11]},
         }
         for coll_dict in collection_data_list
-        for fields in [get_collection_fields(coll_dict)]
+        for fields in [get_collection_fields(coll_dict,coll_description_en,coll_description_fr,coll_keywords_fr)]
     }
     return coll_id_dict 
 
@@ -416,11 +419,11 @@ def item_to_features_properties(params, geocore_features_dict, item_dict, coll_i
         # You might want to set item_date to None or a default value, or re-raise the exception, depending on your use case
         item_date = default_date
     yr = item_date.strftime("%Y")  
-    
+    #TODO update the item level title
     #title
     item_title = item_properties['title'].replace("_", "-")
     if title_en != None and title_fr!= None: 
-        update_dict(properties_dict, {'title':{'en':'Record - ' + item_title + '-' + title_en, 'fr':'Record - ' + item_title + '-' + title_fr}})
+        update_dict(properties_dict, {'title':{'en':'Record - ' + item_title + '-' + title_en, 'fr':'Ficher - ' + item_title + '-' + title_fr}})
     #parentIdentifier
     update_dict(properties_dict, {"parentIdentifier":  source + '-'+ coll_id})
     
@@ -452,7 +455,7 @@ def item_to_features_properties(params, geocore_features_dict, item_dict, coll_i
     description_fr_str = f"{description_fr or ''} {disclaimer_fr}"
     keywords_en_str = f"SpatioTemporal Asset Catalog, stac, {keywords_en or ''}"
     keywords_fr_str = f"SpatioTemporal Asset Catalog, stac, {keywords_fr or ''}"
-    
+
     #Geometry 
     west, south, east, north = [round(coord, 2) for coord in item_bbox]
     geometry_str = f"POLYGON(({west} {south}, {east} {south}, {east} {north}, {west} {north}, {west} {south}))"

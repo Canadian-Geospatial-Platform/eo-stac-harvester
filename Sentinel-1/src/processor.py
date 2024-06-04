@@ -106,12 +106,15 @@ def lambda_handler(event, context):
                         'type_data': type_data,
                         'topicCategory': topicCategory,
                         'sourceSystemName':sourceSystemName,
-                        'eoCollection':collection
+                        'eoCollection':collection,
+                        "coll_description_en": coll_description_en, 
+                        "coll_description_fr": coll_description_fr,
+                        "coll_keywords_fr": coll_keywords_fr 
                         }
                         
                 item_count = 0 
                 # Get the collection level keywords, description, and titles   
-                coll_id_dict = create_coll_dict(api_root, collection)
+                coll_id_dict = create_coll_dict(api_root, collection, coll_description_en,coll_description_fr,coll_keywords_fr)
                 
                 r = requests.get(item_event)
                 if r.status_code == 200:
@@ -127,8 +130,10 @@ def lambda_handler(event, context):
                             item_properties_dict = item_to_features_properties(params=params, geocore_features_dict=geocore_features_dict, item_dict=item, coll_id_dict=coll_id_dict)
                             item_geocore_updated = update_geocore_dict(geocore_features_dict=geocore_features_dict, properties_dict =item_properties_dict ,geometry_dict=item_geometry_dict)
                             item_name = source + '-' + coll_id + '-' + item_id + '.geojson'
-                             
+                            
+
                             msg = upload_file_s3(item_name, bucket=processed_data_bucket_name, json_data=item_geocore_updated, object_name=None)
+                            
                             if msg == True: 
                                 item_count += 1 
                                 print(f'Finished and uploaded the item to bucket: {processed_data_bucket_name}')  
