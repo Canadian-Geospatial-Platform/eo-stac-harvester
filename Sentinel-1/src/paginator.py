@@ -47,9 +47,15 @@ def search_pages_get_json(url: str, collection:str, payload: dict = None):
    
     while next_page:
         try: 
+            #print(f'Trying to get page: {next_page}')
             r = requests.get(next_page)
+            #print(f'request response is {r}')
+            
             if r.status_code == 200:
-                j = r.json()                     
+                #print('Status code is 200')
+                j = r.json()            
+                #print('JSON response received')
+                
                 # Test the returns total against total matched
                 returned += j['context']['returned']
                 matched = j['context']['matched']
@@ -57,18 +63,26 @@ def search_pages_get_json(url: str, collection:str, payload: dict = None):
                     json_object = {"collection": collection,
                                    "item_api": next_page,
                                    #"created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                                   "created_at": datetime.datetime.utcnow().now().isoformat()[:-7] + 'Z' #UTC
+                                   #"created_at": datetime.datetime.utcnow().now().isoformat()[:-7] + 'Z' #UTC
+                                   "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                                    
                                    }
                     pages.append(json_object)
+                    #print(f'Page appended: {json_object}')
+                      
                 if returned < matched:
                     links = j['links']
                     next_page = get_next_page(links)
+                    #print(f'Next page URL: {next_page}')
+                    
                 else:
                     next_page = None
+                    #print('No more pages to process')
             else:
+                #print(f'Status code is not 200: {r.status_code}')
                 next_page = None
-        except: 
+        except Exception as e:
+            print(f'Error: {e}')
             print(f'Connectivity issue: error trying to access the next page api: {next_page}')
                           
     r.close()
