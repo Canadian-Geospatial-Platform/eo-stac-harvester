@@ -31,9 +31,6 @@ Conditions:
 
 
 Resources:
-########################################################
-# S3 Bucket processed data (S3 bucket for testing only)
-########################################################
   ProcessedDataSentinel1S3Bucket:
     Type: 'AWS::S3::Bucket'
     Properties:
@@ -64,6 +61,22 @@ Resources:
         RestrictPublicBuckets: True
       AccessControl: Private
 
+  EOSGLambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess 
+        - arn:aws:iam::aws:policy/AmazonSQSFullAccess
+        - arn:aws:iam::aws:policy/AmazonS3FullAccess
 
 # ########################################################
 # # Lambda Function api links collector 
@@ -102,35 +115,24 @@ Resources:
         - arn:aws:lambda:ca-central-1:336392948345:layer:AWSSDKPandas-Python39:12
         - arn:aws:lambda:ca-central-1:017000801446:layer:AWSLambdaPowertoolsPythonV2:46
 
-#   CollectorFunctionRule:
-#     Type: AWS::Events::Rule
-#     Properties:
-#       Name: !Sub 'eo-sg-scattercollector-1day-${Environment}'
-#       Description: collector on one day interval
-#       State: ENABLED
-#       ScheduleExpression: CollectorFunction
-#       Targets:
-#         - Arn: !GetAtt [CollectorFunction, Arn]
-#           Id: !Ref CollectorFunction
-
-
-  EOSGLambdaExecutionRole:
-    Type: AWS::IAM::Role
+  CollectorFunctionRule:
+    Type: AWS::Events::Rule
     Properties:
-      AssumeRolePolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service:
-                - lambda.amazonaws.com
-            Action: sts:AssumeRole
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
-        - arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess 
-        - arn:aws:iam::aws:policy/AmazonSQSFullAccess
-        - arn:aws:iam::aws:policy/AmazonS3FullAccess
+      Name: !Sub 'eo-sg-sentinel1-collector-every-60mins-${Environment}'
+      Description: sentinel-1 API links collector on every 60minsinterval
+      State: ENABLED
+      ScheduleExpression: 'rate(60 minutes)'
+      Targets:
+        - Arn: !GetAtt [CollectorFunction, Arn]
+          Id: !Ref CollectorFunction
 
+  PermissionForEventsToInvokeCollectorLambda:
+    Type: AWS::Lambda::Permission
+    Properties: 
+      FunctionName: !Ref CollectorFunction
+      Action: 'lambda:InvokeFunction'
+      Principal: 'events.amazonaws.com'
+      SourceArn: !GetAtt CollectorFunction.Arn
 
 
 ########################################################
@@ -369,3 +371,55 @@ Resources:
       ServiceToken: !ImportValue LogGroupHelperLambdaArn
       LogGroupName: !Sub '/${Environment}/webpresence/eo_sg_sentinel1_harvester'
       RetentionInDays: 3653 
+
+
+########################################################
+# Lambda Function Geocore to Parquet 
+########################################################
+  GeocoretoParquetFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Runtime: python3.9
+      Role: !GetAtt EOSGLambdaExecutionRole
+      CodeUri:
+        Bucket: !Ref DeploymentBucket
+        Key:
+          Fn::If:
+            - IsProd
+            - cloudformation-templates/lambda/geocore-to-parquet/geocore-to-parquet-20230823-1500.zip
+            - Fn::If:
+              - IsStage
+              - cloudformation-templates/lambda/geocore-to-parquet/geocore-to-parquet-20230823-1500.zip
+              - cloudformation-templates/lambda/geocore-to-parquet/geocore-to-parquet-20230823-1500.zip
+      MemorySize: 4096
+      Handler: app.lambda_handler
+      Timeout: 900
+      Environment:
+        Variables:
+          GEOJSON_BUCKET_NAME: !Ref ProcessedDataSentinel1S3Bucket
+          PARQUET_BUCKET_NAME: 'webpresence-geocore-geojson-to-parquet-dev'
+          DYNAMODB_TABLE: 'analytics_popularity'
+          PARQUET_FILENAME: 'sentinel1.parquet'
+          REGION_NAME: 'ca-central-1'
+      Layers:
+        - arn:aws:lambda:ca-central-1:336392948345:layer:AWSSDKPandas-Python39:12
+
+  GeocoretoParquetFunctionRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: !Sub 'eo-sg-sentinel1-parquet-every-tuesday-${Environment}'
+      Description: geocore to parquet on once per week on every Tuesday interval
+      State: ENABLED
+      ScheduleExpression: 'cron(0 8 ? * TUE *)'
+      Targets:
+        - Arn: !GetAtt [GeocoretoParquetFunction, Arn]
+          Id: !Ref GeocoretoParquetFunction
+          
+  PermissionForEventsToInvokeGeocoretoParquetLambda:
+    Type: AWS::Lambda::Permission
+    Properties: 
+      FunctionName: !Ref GeocoretoParquetFunction
+      Action: 'lambda:InvokeFunction'
+      Principal: 'events.amazonaws.com'
+      SourceArn: !GetAtt GeocoretoParquetFunction.Arn
+
