@@ -89,11 +89,11 @@ Resources:
         Key:
           Fn::If:
             - IsProd
-            - cloudformation-templates/lambda/geocore-eo-harvester/sentinel-1/sentinel1-sg-scatter-20240115-1730.zip
+            - cloudformation-templates/lambda/geocore-eo-harvester/sentinel-1/sentinel1-sg-collector-20240610-2100.zip
             - Fn::If:
               - IsStage
-              - cloudformation-templates/lambda/geocore-eo-harvester/sentinel-1/sentinel1-sg-scatter-20240115-1730.zip
-              - cloudformation-templates/lambda/geocore-eo-harvester/sentinel-1/sentinel1-sg-scatter-20240115-1730.zip
+              - cloudformation-templates/lambda/geocore-eo-harvester/sentinel-1/sentinel1-sg-collector-20240610-2100.zip
+              - cloudformation-templates/lambda/geocore-eo-harvester/sentinel-1/sentinel1-sg-collector-20240610-2100.zip
       Runtime: python3.9
       MemorySize: 4096
       Timeout: 900
@@ -119,7 +119,7 @@ Resources:
     Type: AWS::Events::Rule
     Properties:
       Name: !Sub 'eo-sg-sentinel1-collector-every-60mins-${Environment}'
-      Description: sentinel-1 API links collector on every 60minsinterval
+      Description: sentinel-1 API links collector on every 60mins interval
       State: ENABLED
       ScheduleExpression: 'rate(60 minutes)'
       Targets:
@@ -147,11 +147,11 @@ Resources:
         Key:
           Fn::If:
             - IsProd
-            - cloudformation-templates/lambda/geocore-eo-harvester/sentinel-1/sentinel1-sg-processor-20240115-1600.zip
+            - cloudformation-templates/lambda/geocore-eo-harvester/sentinel-1/sentinel1-sg-processor-20240610-2100.zip
             - Fn::If:
               - IsStage
-              - cloudformation-templates/lambda/geocore-eo-harvester/sentinel-1/sentinel1-sg-processor-20240115-1600.zip
-              - cloudformation-templates/lambda/geocore-eo-harvester/sentinel-1/sentinel1-sg-processor-20240115-1600.zip
+              - cloudformation-templates/lambda/geocore-eo-harvester/sentinel-1/sentinel1-sg-processor-20240610-2100.zip
+              - cloudformation-templates/lambda/geocore-eo-harvester/sentinel-1/sentinel1-sg-processor-20240610-2100.zip
       Role: !GetAtt EOSGLambdaExecutionRole.Arn     
       MemorySize: 4096
       Timeout: 900
@@ -162,7 +162,6 @@ Resources:
         Variables:
           GEOCORE_TEMPLATE_BUCKET_NAME: 'webpresence-geocore-template-dev'
           GEOCORE_TEMPLATE_NAME: 'geocore-format-null-template.json'
-          #GEOCORE_TO_PARQUET_BUCKET_NAME: !Sub 'webpresence-geocore-json-to-geojson-${Environment}'??
           PROCESSED_DATA_BUCKET_NAME: !Ref ProcessedDataSentinel1S3Bucket
           API_ROOT: 'https://www.eodms-sgdot.nrcan-rncan.gc.ca/stac'
           ROOT_NAME: 'EODMS Datacube API / EODMS Cube de données API'
@@ -238,11 +237,11 @@ Resources:
         Key:
           Fn::If:
             - IsProd
-            - cloudformation-templates/lambda/geocore-eo-harvester/sentinel-1/sentinel1-sg-scatter-20240115-1730.zip
+            - cloudformation-templates/lambda/geocore-eo-harvester/sentinel-1/sentinel1-sg-scatter-20240610-2100.zip
             - Fn::If:
               - IsStage
-              - cloudformation-templates/lambda/geocore-eo-harvester/sentinel-1/sentinel1-sg-scatter-20240116-1230.zip
-              - cloudformation-templates/lambda/geocore-eo-harvester/sentinel-1/sentinel1-sg-scatter-20240116-1230.zip
+              - cloudformation-templates/lambda/geocore-eo-harvester/sentinel-1/sentinel1-sg-scatter-20240610-2100.zip
+              - cloudformation-templates/lambda/geocore-eo-harvester/sentinel-1/sentinel1-sg-scatter-20240610-2100.zip
       Role: !GetAtt EOSGLambdaExecutionRole.Arn 
       Handler: app.lambda_handler
       Runtime: python3.9
@@ -253,7 +252,6 @@ Resources:
       Environment:
         Variables:
           ITEM_LINK_BUCKET_NAME: !Ref EOItemLinksS3Bucket
-          #ITEM_LINK_BUCKET_NAME: 'eo-sgp-datacube-item-links'
           JSON_FILENAME: 'sentinel-1-item-api.json'
           SG_PROCESSES_TABLE_NAME: !Ref SGSentinel1ProcessesTableName
           SG_AGGREGATE_TABLE_NAME: !Ref SGSentinel1AggregateTableName
@@ -292,11 +290,11 @@ Resources:
         Key:
           Fn::If:
             - IsProd
-            - cloudformation-templates/lambda/geocore-eo-harvester/sentinel-1/sentinel1-sg-aggregator-20240116-1100.zip
+            - cloudformation-templates/lambda/geocore-eo-harvester/sentinel-1/sentinel1-sg-aggregator-20240610-2100.zip
             - Fn::If:
               - IsStage
-              - cloudformation-templates/lambda/geocore-eo-harvester/sentinel-1/sentinel1-sg-aggregator-20240116-1230.zip
-              - cloudformation-templates/lambda/geocore-eo-harvester/sentinel-1/sentinel1-sg-aggregator-20240116-1230.zip
+              - cloudformation-templates/lambda/geocore-eo-harvester/sentinel-1/sentinel1-sg-aggregator-20240610-2100.zip
+              - cloudformation-templates/lambda/geocore-eo-harvester/sentinel-1/sentinel1-sg-aggregator-20240610-2100.zip
       Role: !GetAtt EOSGLambdaExecutionRole.Arn 
       Handler: app.lambda_handler
       Runtime: python3.9
@@ -334,11 +332,11 @@ Resources:
         Key:
           Fn::If:
             - IsProd
-            - cloudformation-templates/lambda/geocore-eo-harvester/sentinel-1/sentinel1-sg-gather-20240116-1130.zip
+            - cloudformation-templates/lambda/geocore-eo-harvester/sentinel-1/sentinel1-sg-gather-20240610-2100.zip
             - Fn::If:
               - IsStage
-              - cloudformation-templates/lambda/geocore-eo-harvester/sentinel-1/sentinel1-sg-gather-20240116-1230.zip
-              - cloudformation-templates/lambda/geocore-eo-harvester/sentinel-1/sentinel1-sg-gather-20240116-1230.zip
+              - cloudformation-templates/lambda/geocore-eo-harvester/sentinel-1/sentinel1-sg-gather-20240610-2100.zip
+              - cloudformation-templates/lambda/geocore-eo-harvester/sentinel-1/sentinel1-sg-gather-20240610-2100.zip
       Role: !GetAtt EOSGLambdaExecutionRole.Arn 
       Handler: app.lambda_handler
       Runtime: python3.9
@@ -380,18 +378,18 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       Runtime: python3.9
-      Role: !GetAtt EOSGLambdaExecutionRole
+      Role: !GetAtt ParquetLambdaExecutionRole
       CodeUri:
         Bucket: !Ref DeploymentBucket
         Key:
           Fn::If:
             - IsProd
-            - cloudformation-templates/lambda/geocore-to-parquet/geocore-to-parquet-20230823-1500.zip
+            - cloudformation-templates/lambda/geocore-to-parquet/geocore-to-parquet-20240610-1500.zip
             - Fn::If:
               - IsStage
-              - cloudformation-templates/lambda/geocore-to-parquet/geocore-to-parquet-20230823-1500.zip
-              - cloudformation-templates/lambda/geocore-to-parquet/geocore-to-parquet-20230823-1500.zip
-      MemorySize: 4096
+              - cloudformation-templates/lambda/geocore-to-parquet/geocore-to-parquet-20240610-1500.zip
+              - cloudformation-templates/lambda/geocore-to-parquet/geocore-to-parquet-20240610-1500.zip
+      MemorySize: 10240
       Handler: app.lambda_handler
       Timeout: 900
       Environment:
@@ -403,6 +401,43 @@ Resources:
           REGION_NAME: 'ca-central-1'
       Layers:
         - arn:aws:lambda:ca-central-1:336392948345:layer:AWSSDKPandas-Python39:12
+
+  ParquetLambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess        
+      Policies:
+        - PolicyName: 'policy'
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: 'Allow'
+                Action:
+                  - 's3:*'
+                Resource:
+                  - !Sub arn:aws:s3:::eo-sg-processed-data-sentinel1-${Environment}/*
+                  - !Sub arn:aws:s3:::eo-sg-processed-data-sentinel1-${Environment}
+                  - !Sub arn:aws:s3:::webpresence-geocore-geojson-to-parquet-${Environment}/*
+                  - !Sub arn:aws:s3:::webpresence-geocore-geojson-to-parquet-${Environment}
+                  - !Sub arn:aws:s3:::webpresence-geocore-hnap-json-${Environment}/*
+                  - !Sub arn:aws:s3:::webpresence-geocore-hnap-json-${Environment}
+                  - !Sub arn:aws:s3:::webpresence-geocore-json-to-geojson-${Environment}/*
+                  - !Sub arn:aws:s3:::webpresence-geocore-json-to-geojson-${Environment}
+                  - !Sub arn:aws:s3:::webpresence-geocore-template-${Environment}/*
+                  - !Sub arn:aws:s3:::webpresence-geocore-template-${Environment}  
+            
+
 
   GeocoretoParquetFunctionRule:
     Type: AWS::Events::Rule
