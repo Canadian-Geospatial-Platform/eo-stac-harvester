@@ -2,6 +2,7 @@ AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 Description: Sentinel-1 collection harvestor using serverless Scatter Gather parttern 
 
+
 Parameters:
   RegionName:
     Type: String
@@ -84,6 +85,7 @@ Resources:
   CollectorFunction:
     Type: AWS::Serverless::Function
     Properties:
+      Handler: app.lambda_handler
       CodeUri: 
         Bucket: !Ref DeploymentBucket
         Key:
@@ -102,7 +104,7 @@ Resources:
       Role: !GetAtt EOSGLambdaExecutionRole.Arn 
       Environment:
         Variables:
-          GEOCORE_TEMPLATE_BUCKET_NAME: 'webpresence-geocore-template-dev'
+          GEOCORE_TEMPLATE_BUCKET_NAME:  !Sub 'webpresence-geocore-template-${Environment}'
           GEOCORE_TEMPLATE_NAME: 'geocore-format-null-template.json'
           ITEM_LINK_BUCKET_NAME: !Ref EOItemLinksS3Bucket
           PROCESSED_DATA_BUCKET_NAME: !Ref ProcessedDataSentinel1S3Bucket
@@ -126,6 +128,7 @@ Resources:
         - Arn: !GetAtt [CollectorFunction, Arn]
           Id: !Ref CollectorFunction
 
+
   PermissionForEventsToInvokeCollectorLambda:
     Type: AWS::Lambda::Permission
     Properties: 
@@ -133,6 +136,7 @@ Resources:
       Action: 'lambda:InvokeFunction'
       Principal: 'events.amazonaws.com'
       SourceArn: !GetAtt CollectorFunction.Arn
+
 
 
 ########################################################
@@ -160,7 +164,7 @@ Resources:
         - x86_64
       Environment:
         Variables:
-          GEOCORE_TEMPLATE_BUCKET_NAME: 'webpresence-geocore-template-dev'
+          GEOCORE_TEMPLATE_BUCKET_NAME: !Sub 'webpresence-geocore-template-${Environment}'
           GEOCORE_TEMPLATE_NAME: 'geocore-format-null-template.json'
           PROCESSED_DATA_BUCKET_NAME: !Ref ProcessedDataSentinel1S3Bucket
           API_ROOT: 'https://www.eodms-sgdot.nrcan-rncan.gc.ca/stac'
@@ -271,6 +275,7 @@ Resources:
         - Arn: !GetAtt [ScatterFunction, Arn]
           Id: !Ref ScatterFunction
 
+
   PermissionForEventsToInvokeScatterLambda:
     Type: AWS::Lambda::Permission
     Properties: 
@@ -278,6 +283,7 @@ Resources:
       Action: 'lambda:InvokeFunction'
       Principal: 'events.amazonaws.com'
       SourceArn: !GetAtt ScatterFunctionRule.Arn
+
 
 ########################################################
 # Lambda Function Aggregator
@@ -378,7 +384,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       Runtime: python3.9
-      Role: !GetAtt ParquetLambdaExecutionRole
+      Role: !GetAtt ParquetLambdaExecutionRole.Arn
       CodeUri:
         Bucket: !Ref DeploymentBucket
         Key:
@@ -395,7 +401,7 @@ Resources:
       Environment:
         Variables:
           GEOJSON_BUCKET_NAME: !Ref ProcessedDataSentinel1S3Bucket
-          PARQUET_BUCKET_NAME: 'webpresence-geocore-geojson-to-parquet-dev'
+          PARQUET_BUCKET_NAME:  !Sub 'webpresence-geocore-geojson-to-parquet-${Environment}'
           DYNAMODB_TABLE: 'analytics_popularity'
           PARQUET_FILENAME: 'sentinel1.parquet'
           REGION_NAME: 'ca-central-1'
@@ -449,6 +455,7 @@ Resources:
       Targets:
         - Arn: !GetAtt [GeocoretoParquetFunction, Arn]
           Id: !Ref GeocoretoParquetFunction
+
           
   PermissionForEventsToInvokeGeocoretoParquetLambda:
     Type: AWS::Lambda::Permission
@@ -456,5 +463,4 @@ Resources:
       FunctionName: !Ref GeocoretoParquetFunction
       Action: 'lambda:InvokeFunction'
       Principal: 'events.amazonaws.com'
-      SourceArn: !GetAtt GeocoretoParquetFunction.Arn
-
+      SourceArn: !GetAtt GeocoretoParquetFunctionRule.Arn
