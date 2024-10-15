@@ -1,0 +1,20 @@
+{
+    "Records": [
+        {
+            "messageId": "b6d08ed6-7741-4e8e-b3b9-986690e9e959",
+            "receiptHandle": "AQEBETfNMTNVc/NQ7i2Q8tp+egbji1rvcLOQlStdllC4hPpgtLKhIyCrxGTCt+Ua6j+h51U2g6o/IfQcDNY+YxniDgwRP44h1hc1U0XzLd9luB95+FUL4aElXX2aPYsxhn96lFWgLlt1++H41ulU4cW2w9KoPg1DEUTYgPPRz7VivdfKT5KaKeybn36flhJtfxsbLpQmTdo6t9sTkZVSK5LYhMIwM2mGkXSDwbu03HeBFOiojrMHuPyekvgEFIsY9cQ7hDslESi0nS4tyzXflKm6iQzsEE4ZutvYdIx9VKQ7fqFj4ph+MPQOS5zNtw1BfrH8DGbhQ+uL80Cf5PKs9vHr8pYVeS4G5JNl8JZf4B/0VZkyI8nXX7Slz+Gpp84x0I5flGqaNNEs6td9c42+zjhERA==",
+            "body": "{\"item-api\":\"http://www.eodms-sgdot.nrcan-rncan.gc.ca/stac/collections/sentinel-1/items?limit=5000&token=next:3bb040e8-2c78-4396-85f8-94bd8bf203ab\", \"index\":2, \"item_state\":{\"scatter_gather_id\": \"1701445863\", \"process_id\": \"2_http://www.eodms-sgdot.nrcan-rncan.gc.ca/stac/collections/sentinel-1/items?limit=5000&token=next:3bb040e8-2c78-4396-85f8-94bd8bf203ab\", \"status\": \"started\", \"created_at\": \"2023-12-01 15:51:03\", \"updated_at\": \"2023-12-01 15:51:03\"}}",
+            "attributes": {
+                "ApproximateReceiveCount": "847",
+                "SentTimestamp": "1701445863953",
+                "SenderId": "AROAQC5WOXS3VA3XVHB6Z:xinli.cai@nrn-awscloud.internal",
+                "ApproximateFirstReceiveTimestamp": "1701445863953"
+            },
+            "messageAttributes": {},
+            "md5OfBody": "5dc7fe62805bf10152b624de3a4985e8",
+            "eventSource": "aws:sqs",
+            "eventSourceARN": "arn:aws:sqs:ca-central-1:006288227511:processor_q",
+            "awsRegion": "ca-central-1"
+        }
+    ]
+  }
