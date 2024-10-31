@@ -11,11 +11,9 @@ logger = Logger()
 
 from paginator import *
 from s3_operations import *
-from stac_to_geocore_sentinel1 import *
+from stac_to_geocore_rcm-ard import *
 
-####################################
-# This lambda is the CollectorFunction in the CloudFormation template
-####################################
+
 
 # environment variables for lambda
 eo_datacube_api_bucketname =  os.environ['ITEM_LINK_BUCKET_NAME']
@@ -39,7 +37,7 @@ api_root = 'https://www.eodms-sgdot.nrcan-rncan.gc.ca/stac'
 root_name = 'EODMS Datacube API / EODMS Cube de données API' #must provide en and fr 
 source='eodms'
 sourceSystemName = 'ccmeo-eodms'
-collection='rcm'
+collection='sentinel-1'
 """
 
 datetime_now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -107,7 +105,8 @@ def lambda_handler(event, context):
                 
             
             # Collection Level mapping 
-            collection_sentinel_list = [entry for entry in collection_data_list if entry.get('id') == 'sentinel-1']
+            print(collection)
+            collection_sentinel_list = [entry for entry in collection_data_list if entry.get('id') == collection]
             collection_sentinel_dict =collection_sentinel_list[0]
             coll_extent = collection_sentinel_dict.get('extent')
             coll_bbox = coll_extent.get('spatial', {}).get('bbox', [None])

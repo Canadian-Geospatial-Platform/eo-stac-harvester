@@ -10,14 +10,13 @@ from aws_lambda_powertools import Logger
 logger = Logger()
 
 from s3_operations import *
-from stac_to_geocore_sentinel1 import *
+from stac_to_geocore_rcm-ard import *
 from dynamo_operations import update_item_finished
 
 
 # environment variables for lambda
 geocore_template_bucket_name = os.environ['GEOCORE_TEMPLATE_BUCKET_NAME']
 geocore_template_name = os.environ['GEOCORE_TEMPLATE_NAME']
-#geocore_to_parquet_bucket_name = os.environ['GEOCORE_TO_PARQUET_BUCKET_NAME']
 processed_data_bucket_name = os.environ['PROCESSED_DATA_BUCKET_NAME']
 api_root = os.environ['API_ROOT']
 root_name = os.environ['ROOT_NAME']

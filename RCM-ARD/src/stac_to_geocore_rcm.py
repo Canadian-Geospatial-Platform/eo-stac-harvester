@@ -1,22 +1,22 @@
 import json 
-from datetime import datetime
+from datetime import datetime, timedelta
 import re 
 import requests
 
 # Hardcoded variables for the STAC to GeoCore translation 
 status = 'active'
 maintenance = 'active' 
-useLimits_en = 'Open Government Licence - Canada http://open.canada.ca/en/open-government-licence-canada'
-useLimits_fr = 'Licence du gouvernement ouvert - Canada http://ouvert.canada.ca/fr/licence-du-gouvernement-ouvert-canada'
+useLimits_en = 'RADARSAT Constellation Mission (RCM) - Public User License Agreement https://www.asc-csa.gc.ca/eng/satellites/radarsat/access-to-data/public-user-license-agreement.asp'
+useLimits_fr = 'Mission de la Constellation RADARSAT (MCR) - Contrat de licence d\'utilisateur public https://www.asc-csa.gc.ca/fra/satellites/radarsat/acces-aux-donnees/contrat-licence-utilisateur-public.asp'
 spatialRepresentation = 'grid; grille'
 type_data = "Synthetic Aperature Radar; Radar à synthèse d'ouverture"
 topicCategory = 'EarthObservation;SyntheticAperatureRadar'
 disclaimer_en = '\\n\\n**This third party metadata element follows the Spatio Temporal Asset Catalog (STAC) specification.**'
 #disclaimer_fr = '\\n\\n**Cet élément de métadonnées tiers suit la spécification Spatio Temporal Asset Catalog (STAC).** **Cet élément de métadonnées provenant d’une tierce partie a été traduit à l\'aide d\'un outil de traduction automatisée (Amazon Translate).**'
 disclaimer_fr = '\\n\\n**Cet élément de métadonnées tiers suit la spécification Spatio Temporal Asset Catalog (STAC).**'
-coll_description_en = "The Sentinel mirror is maintained by the Government of Canada through the Copernicus collaborative ground segment program as well as EUMETSAT. Data is made available as quickly as possible based on Canada coverage availability at the source."
-coll_description_fr = "Le miroir Sentinel est entretenu par le gouvernement du Canada dans le cadre du programme collaboratif du segment sol Copernicus ainsi que par EUMETSAT. Les données sont rendues disponibles le plus rapidement possible en fonction de la disponibilité de la couverture canadienne à la source."
-coll_keywords_fr = "radarsat, RCM, radar, observation de la Terre, esa" 
+coll_description_en = "The RADARSAT Constellation Mission (RCM) is Canada's third generation of Earth observation satellites. Launched on June 12, 2019, the three identical satellites work together to bring solutions to key challenges for Canadians. As part of ongoing Open Government efforts, NRCan has developed a CEOS analysis ready data (ARD) processing capability for RCM and is processing the Canada-wide, 30M Compact-Polarization standard coverage, every 12 days. Previously, users were stuck ordering, downloading and processing RCM images (level 1) on their own, often with expensive software. This new dataset aims to remove these burdens with a new STAC catalog for discover and direct download from S3."
+coll_description_fr = "La mission de la Constellation RADARSAT (MCR) est la troisième génération de satellites d'observation de la Terre du Canada. Lancés le 12 juin 2019, les trois satellites identiques travaillent ensemble pour apporter des solutions aux principaux défis des Canadiens. Dans le cadre des efforts continus pour un gouvernement ouvert, RNCan a développé une capacité de traitement des données prêtes à l'analyse (DPA) du CEOS pour le MCR et traite la couverture standard de polarisation compacte de 30 M à l'échelle du Canada, tous les 12 jours. Auparavant, les utilisateurs étaient obligés de commander, de télécharger et de traiter eux-mêmes les images RCM (niveau 1), souvent à l'aide de logiciels coûteux. Ce nouvel ensemble de données vise à supprimer ces fardeaux avec un nouveau catalogue STAC à découvrir et à télécharger directement depuis S3."
+coll_keywords_fr = "MCR, radar, observation de la Terre, ESA, La mission de la Constellation RADARSAT" 
 
 contact = [{
         'organisation':{
@@ -266,8 +266,8 @@ def coll_to_features_properties(params, coll_dict,geocore_features_dict):
     #parentIdentifier: root id 
     update_dict(properties_dict, {"parentIdentifier":  root_id + '-root'})
     #temporalExtent
-    time_begin_str = datetime.strptime(time_begin, '%Y-%m-%dT%H:%M:%S.%fZ').strftime("%Y-%m-%d") if time_begin else '0001-01-01'
-    time_end_str = datetime.strptime(time_end, '%Y-%m-%dT%H:%M:%S.%fZ').strftime("%Y-%m-%d") if time_end else 'Present'
+    time_begin_str = format_datetime_for_json(time_begin) if time_begin else '0001-01-01'
+    time_end_str = format_datetime_for_json(time_end) if time_end else 'Present'
     temporal_extent_updates = {"begin": time_begin_str, "end": time_end_str}
     update_dict(properties_dict['temporalExtent'], temporal_extent_updates)
 
@@ -412,13 +412,21 @@ def item_to_features_properties(params, geocore_features_dict, item_dict, coll_i
     #date
     default_date = datetime(1900, 1, 1)  # Replace with a sensible default
     try:
-        item_date = datetime.strptime(item_properties['datetime'], '%Y-%m-%dT%H:%M:%S.%f%z')
+        item_start_date = datetime.strptime(item_properties['datetime'], '%Y-%m-%dT%H:%M:%S.%f%z')
     except ValueError:
         # Handle the exception here
         print("The date format of 'item_properties['datetime']' does not match the expected format.")
-        # You might want to set item_date to None or a default value, or re-raise the exception, depending on your use case
-        item_date = default_date
-    yr = item_date.strftime("%Y")  
+        # You might want to set item_start_date to None or a default value, or re-raise the exception, depending on your use case
+        item_start_date = default_date
+    
+    try:
+        item_end_date = datetime.strptime(item_properties['end_datetime'], '%Y-%m-%dT%H:%M:%S.%f%z')
+    except ValueError:
+        # Handle the exception here
+        print("The date format of 'item_properties['end_datetime']' does not match the expected format.")
+        # You might want to set item_end_date to None or a default value, or re-raise the exception, depending on your use case
+        item_end_date = 'Present'
+
     #TODO update the item level title
     #title
     item_title = item_properties['title'].replace("_", "-")
@@ -432,17 +440,17 @@ def item_to_features_properties(params, geocore_features_dict, item_dict, coll_i
         item_created = item_properties['created']
         update_dict(properties_dict['date']['published'], {
         "text": 'publication; publication',
-        "date": item_created
+        "date": format_datetime_for_json(item_created)
         })
         
         update_dict(properties_dict['date']['created'], {
         "text": 'creation; création',
-        "date": item_created
+        "date": format_datetime_for_json(item_created)
         })
     #temporalExtent: begin is the datatime, hard coded 'Present'as end   
     update_dict(properties_dict['temporalExtent'], {
-    "begin": item_date.strftime("%Y-%m-%d"),
-    "end": 'Present'})
+    "begin": format_datetime_for_json(item_start_date),
+    "end": format_datetime_for_json(item_end_date)})
     
     #options  
     links_list = links_to_properties_options(links_list=item_links, id=item_id, root_name=root_name, title_en=title_en, title_fr=title_fr, stac_type='item')
@@ -526,3 +534,31 @@ def polarization_to_string(polarization):
     else:
         # Handle other cases, such as an empty list or more than 2 items
         return 'Invalid polarization list'
+
+def format_datetime_for_json(date_input, default_date=datetime(1900, 1, 1)):
+    """
+    Formats a datetime object or a datetime string in ISO format to the desired format.
+    If parsing fails, returns a default date formatted in the same way.
+    """
+    # If date_input is a string, parse it; if it's already a datetime, use it directly
+    if isinstance(date_input, str):
+        try:
+            date_obj = datetime.strptime(date_input, '%Y-%m-%dT%H:%M:%S.%f%z')
+        except ValueError:
+            try:
+                date_obj = datetime.strptime(date_input, '%Y-%m-%d %H:%M:%S.%f%z')
+            except ValueError:
+                print("The date format does not match the expected format. Using default date.")
+                date_obj = default_date
+    elif isinstance(date_input, datetime):
+        date_obj = date_input
+    else:
+        raise TypeError("date_input must be a string or a datetime object")
+
+    # Format with "Z" for UTC or with timezone offset for others
+    if date_obj.utcoffset() == timedelta(0):
+        formatted_date = date_obj.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
+    else:
+        formatted_date = date_obj.strftime("%Y-%m-%dT%H:%M:%S.%f%z")
+
+    return formatted_date
