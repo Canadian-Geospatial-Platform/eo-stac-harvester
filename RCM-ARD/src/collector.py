@@ -37,7 +37,7 @@ api_root = 'https://www.eodms-sgdot.nrcan-rncan.gc.ca/stac'
 root_name = 'EODMS Datacube API / EODMS Cube de données API' #must provide en and fr 
 source='eodms'
 sourceSystemName = 'ccmeo-eodms'
-collection='sentinel-1'
+collection='rcm-ard'
 """
 
 datetime_now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -105,7 +105,6 @@ def lambda_handler(event, context):
                 
             
             # Collection Level mapping 
-            print(collection)
             collection_sentinel_list = [entry for entry in collection_data_list if entry.get('id') == collection]
             collection_sentinel_dict =collection_sentinel_list[0]
             coll_extent = collection_sentinel_dict.get('extent')
