@@ -10,7 +10,7 @@ from aws_lambda_powertools import Logger
 logger = Logger()
 
 from s3_operations import *
-from stac_to_geocore_rcm-ard import *
+from stac_to_geocore_rcm_ard import *
 from dynamo_operations import update_item_finished
 
 

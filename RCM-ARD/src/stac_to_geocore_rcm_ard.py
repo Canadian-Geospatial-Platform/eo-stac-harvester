@@ -469,7 +469,7 @@ def item_to_features_properties(params, geocore_features_dict, item_dict, coll_i
     geometry_str = f"POLYGON(({west} {south}, {east} {south}, {east} {north}, {west} {north}, {west} {south}))"
     
     #EO filters / SAR properties 
-    orbit_state = item_properties.get('sar:orbit_state', 'None')
+    orbit_state = item_properties.get('sat:orbit_state', 'None')
     polarizations = item_properties.get('sar:polarizations', 'None') #list
     polarizations_str = polarization_to_string(polarizations)
     eoFilters = [ 

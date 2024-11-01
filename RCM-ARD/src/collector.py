@@ -11,7 +11,7 @@ logger = Logger()
 
 from paginator import *
 from s3_operations import *
-from stac_to_geocore_rcm-ard import *
+from stac_to_geocore_rcm_ard import *
 
 
 
