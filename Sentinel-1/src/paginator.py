@@ -8,7 +8,7 @@ from botocore.exceptions import ClientError
 from datetime import datetime
 
 
-def search_pages_get_json(url: str, collection:str, payload: dict = None, max_retries: int = 5, initial_backoff: float = 1.0):
+def search_pages_get_json(url: str, collection: str, payload: dict = None, max_retries: int = 5, initial_backoff: float = 1.0):
     """
     A valid list of urls based on stac api link['next'] for the search endpoint
     
