@@ -3,11 +3,12 @@ import json
 import logging 
 import boto3 
 import os
+import time
 from botocore.exceptions import ClientError
 from datetime import datetime
 
 
-def search_pages_get_json(url: str, collection:str, payload: dict = None):
+def search_pages_get_json(url: str, collection:str, payload: dict = None, max_retries: int = 5, initial_backoff: float = 1.0):
     """
     A valid list of urls based on stac api link['next'] for the search endpoint
     
@@ -15,20 +16,26 @@ def search_pages_get_json(url: str, collection:str, payload: dict = None):
     (https://datacube.services.geo.ca/api/collections/landcover/items)
 
     This pagenator verifies the validity of the next link and returns a list
-    of valid pages.
+    of valid pages. It includes retry logic with exponential backoff to handle
+    transient network failures.
 
     Parameters
     ----------
     url : str
         The stac api endpoint.
+    collection : str
+        The collection name.
+    payload : dict
+        The POST payload. The default is None.
+    max_retries : int
+        Maximum number of retry attempts for failed requests. Default is 5.
+    initial_backoff : float
+        Initial backoff time in seconds for retry logic. Default is 1.0.
 
     Returns
     -------
     pages: list
         A list of valid page urls to paginate through.
-    payload: dict
-        The POST payload.
-        The default is None.
     
     Example
     -------
@@ -46,46 +53,84 @@ def search_pages_get_json(url: str, collection:str, payload: dict = None):
     matched = 0
    
     while next_page:
-        try: 
-            #print(f'Trying to get page: {next_page}')
-            r = requests.get(next_page)
-            #print(f'request response is {r}')
-            
-            if r.status_code == 200:
-                #print('Status code is 200')
-                j = r.json()            
-                #print('JSON response received')
+        retry_count = 0
+        success = False
+        r = None
+        
+        while retry_count < max_retries and not success:
+            try: 
+                print(f'Fetching page: {next_page} (attempt {retry_count + 1}/{max_retries})')
+                r = requests.get(next_page, timeout=60)
                 
-                # Test the returns total against total matched
-                returned += j['context']['returned']
-                matched = j['context']['matched']
-                if returned > 0:
-                    json_object = {"collection": collection,
-                                   "item_api": next_page,
-                                   #"created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                                   #"created_at": datetime.datetime.utcnow().now().isoformat()[:-7] + 'Z' #UTC
-                                   "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                                   
-                                   }
-                    pages.append(json_object)
-                    #print(f'Page appended: {json_object}')
-                      
-                if returned < matched:
-                    links = j['links']
-                    next_page = get_next_page(links)
-                    #print(f'Next page URL: {next_page}')
+                if r.status_code == 200:
+                    print('Status code is 200')
+                    j = r.json()            
+                    print('JSON response received')
                     
-                else:
-                    next_page = None
-                    #print('No more pages to process')
-            else:
-                #print(f'Status code is not 200: {r.status_code}')
-                next_page = None
-        except Exception as e:
-            print(f'Error: {e}')
-            print(f'Connectivity issue: error trying to access the next page api: {next_page}')
+                    # Test the returns total against total matched
+                    returned += j['context']['returned']
+                    matched = j['context']['matched']
+                    print(f'Progress: {returned}/{matched} items collected')
+                    
+                    if returned > 0:
+                        json_object = {"collection": collection,
+                                       "item_api": next_page,
+                                       "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                                       }
+                        pages.append(json_object)
+                        print(f'Page appended: {json_object}')
                           
-    r.close()
+                    if returned < matched:
+                        links = j['links']
+                        next_page = get_next_page(links)
+                        print(f'Next page URL: {next_page}')
+                    else:
+                        next_page = None
+                        print(f'All pages processed. Total items collected: {returned}')
+                    
+                    success = True
+                    
+                elif r.status_code >= 500:
+                    # Server error - retry with backoff
+                    print(f'Server error (status code {r.status_code}), will retry')
+                    retry_count += 1
+                    if retry_count < max_retries:
+                        backoff_time = initial_backoff * (2 ** (retry_count - 1))
+                        print(f'Retrying in {backoff_time} seconds...')
+                        time.sleep(backoff_time)
+                    else:
+                        print(f'Max retries reached for {next_page}. Status code: {r.status_code}')
+                        raise Exception(f'Failed to fetch page after {max_retries} attempts: HTTP {r.status_code}')
+                else:
+                    # Client error (4xx) - don't retry, log and fail
+                    print(f'Client error: Status code {r.status_code} for {next_page}')
+                    raise Exception(f'Client error: HTTP {r.status_code} for {next_page}')
+                    
+            except requests.exceptions.RequestException as e:
+                # Network/connection errors - retry with backoff
+                print(f'Request exception: {e}')
+                retry_count += 1
+                if retry_count < max_retries:
+                    backoff_time = initial_backoff * (2 ** (retry_count - 1))
+                    print(f'Retrying in {backoff_time} seconds...')
+                    time.sleep(backoff_time)
+                else:
+                    print(f'Max retries reached for {next_page}. Error: {e}')
+                    raise Exception(f'Failed to fetch page after {max_retries} attempts: {e}')
+            except Exception as e:
+                print(f'Unexpected error: {e}')
+                print(f'Error occurred while accessing: {next_page}')
+                raise
+            finally:
+                if r is not None:
+                    r.close()
+                          
+    print(f'Pagination complete. Collected {len(pages)} pages with {returned} items total (expected {matched})')
+    
+    # Validate that we collected all expected items
+    if returned != matched:
+        print(f'WARNING: Item count mismatch! Collected {returned} items but expected {matched}')
+    
     return pages
 
 def get_next_page(links:list):
